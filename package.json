@@ -26,7 +26,7 @@
     "mv": "^2.1.1",
     "ts-loader": "^5.3.3",
     "typescript": "^3.2.2",
-    "typescript-styled-plugin": "^0.13.0",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "webpack": "4.28.4"
   }
 }
