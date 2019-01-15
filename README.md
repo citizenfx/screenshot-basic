@@ -8,7 +8,7 @@ and wraps these calls using Three.js to 'simplify' WebGL initialization and copy
 
 ## Usage
 
-1. Make sure your [cfx-server-data](https://github.com/cfx-server-data) is updated as of 2019-01-15 or later. You can easily
+1. Make sure your [cfx-server-data](https://github.com/citizenfx/cfx-server-data) is updated as of 2019-01-15 or later. You can easily
    update it by running `git pull` in your local clone directory.
 2. Install `screenshot-basic`:
    ```
