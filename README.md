@@ -16,7 +16,7 @@ and wraps these calls using Three.js to 'simplify' WebGL initialization and copy
    cd 'resources/[local]'
    git clone https://github.com/citizenfx/screenshot-basic.git screenshot-basic
    ```
-3. Make/use a resource that uses it. Currently, there is no directly-usable commands, it is only usable through exports.
+3. Make/use a resource that uses it. Currently, there are no directly-usable commands, it is only usable through exports.
 
 ## API
 
