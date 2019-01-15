@@ -2,7 +2,7 @@
 
 ## Description
 
-screenshot-basic is a basic resource for making screenshots of clients' screens using FiveM. It uses the same backing
+screenshot-basic is a basic resource for making screenshots of clients' game render targets using FiveM. It uses the same backing
 WebGL/OpenGL ES calls as used by the `application/x-cfx-game-view` plugin (see the code in [citizenfx/fivem](https://github.com/citizenfx/fivem/blob/b0a7cda1007dc53d2ba0f638c035c0a5d1402796/data/client/bin/d3d_rendering.cc#L248)),
 and wraps these calls using Three.js to 'simplify' WebGL initialization and copying to a buffer from asynchronous NUI.
 
