@@ -1,6 +1,20 @@
 Forked from: https://github.com/citizenfx/screenshot-basic
 <br>Added headers and imgur support
 
+```javascript
+// Imgur client ID
+const CLIENT_ID = 'changeThis';
+
+exports['screenshot-basic'].requestScreenshotUpload(`https://api.imgur.com/3/upload`, 'imgur', {
+   headers: {
+      'authorization': `Client-ID ${ CLIENT_ID }`,
+      'content-type': 'multipart/form-data'
+   }
+}, ( data ) => {
+   console.log(JSON.parse(data).data.link);
+});
+```
+
 # screenshot-basic for FiveM
 
 ## Description
