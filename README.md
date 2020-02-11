@@ -1,3 +1,6 @@
+Forked from: https://github.com/citizenfx/screenshot-basic
+<br>Added headers and imgur support
+
 # screenshot-basic for FiveM
 
 ## Description
