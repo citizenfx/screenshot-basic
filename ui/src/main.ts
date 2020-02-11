@@ -16,6 +16,7 @@ import {
 class ScreenshotRequest {
     encoding: 'jpg' | 'png' | 'webp';
     quality: number;
+    headers: any;
 
     correlation: string;
 
@@ -167,14 +168,21 @@ class ScreenshotUI {
             return formData;
         };
 
+        let body = (request.targetField) ? getFormData() : JSON.stringify({
+            data: imageURL,
+            id: request.correlation
+        });
+
+        if (request.targetField === 'imgur')  {
+            body = imageURL.replace(/^data:image\/[a-z]+;base64,/, '');
+        }
+  
         // upload the image somewhere
         fetch(request.targetURL, {
             method: 'POST',
             mode: 'cors',
-            body: (request.targetField) ? getFormData() : JSON.stringify({
-                data: imageURL,
-                id: request.correlation
-            })
+            headers: request.headers,
+            body: body
         })
         .then(response => response.text())
         .then(text => {
