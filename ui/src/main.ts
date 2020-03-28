@@ -17,6 +17,8 @@ class ScreenshotRequest {
     encoding: 'jpg' | 'png' | 'webp';
     quality: number;
     headers: any;
+    mugshot: boolean;
+    trim: boolean;
 
     correlation: string;
 
@@ -159,8 +161,25 @@ class ScreenshotUI {
         }
 
         // actual encoding
-        const imageURL = canvas.toDataURL(type, request.quality);
+        let imageURL = canvas.toDataURL(type, request.quality);
 
+        // https://stackoverflow.com/questions/35033357/how-do-i-extract-a-portion-of-an-image-in-canvas-and-use-it-as-background-image
+        let crop = function(canvas, offsetX, offsetY, width, height) {
+            // create an in-memory canvas
+            let buffer = document.createElement('canvas');
+            let b_ctx = buffer.getContext('2d');
+            // set its width/height to the required ones
+            buffer.width = width;
+            buffer.height = height;
+            // draw the main canvas on our buffer one
+            // drawImage(source, source_X, source_Y, source_Width, source_Height, 
+            //  dest_X, dest_Y, dest_Width, dest_Height)
+            b_ctx.drawImage(canvas, offsetX, offsetY, width, height,
+                            0, 0, buffer.width, buffer.height);
+                
+            return buffer.toDataURL();
+        };
+        
         const getFormData = () => {
             const formData = new FormData();
             formData.append(request.targetField, dataURItoBlob(imageURL), `screenshot.${request.encoding}`);
@@ -173,7 +192,11 @@ class ScreenshotUI {
             id: request.correlation
         });
 
-        if (request.targetField === 'imgur')  {
+        if ( request.mugshot ) {
+            imageURL = crop(canvas, 0, 0, 160, 170);
+        }
+
+        if (request.targetField === 'imgur') {
             body = imageURL.replace(/^data:image\/[a-z]+;base64,/, '');
         }
   
