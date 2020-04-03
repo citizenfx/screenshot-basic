@@ -50,7 +50,7 @@ exp('requestScreenshotUpload', (url: string, field: string, options: any, cb: (r
     const realOptions = (cb !== undefined) ? options : {
         headers: {},
         encoding: 'jpg',
-        mugshot: false
+        crop: false
     };
     
     const realCb = (cb !== undefined) ? cb : options;
