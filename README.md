@@ -11,9 +11,6 @@ exports['screenshot-basic'].requestScreenshotUpload(`https://api.imgur.com/3/upl
    headers: {
       'authorization': `Client-ID ${ CLIENT_ID }`,
       'content-type': 'multipart/form-data'
-   },
-   crop: {
-      
    }
 }, ( data ) => {
    console.log(JSON.parse(data).data.link);
