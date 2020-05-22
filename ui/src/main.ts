@@ -46,12 +46,17 @@ class ScreenshotUI {
     rtTexture: any;
     sceneRTT: any;
     cameraRTT: any;
+    material: any;
     request: ScreenshotRequest;
 
     initialize() {
         window.addEventListener('message', event => {
             this.request = event.data.request;
-        })
+        });
+
+        window.addEventListener('resize', event => {
+            this.resize();
+        });
 
         const cameraRTT: any = new OrthographicCamera( window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000 );
         cameraRTT.position.z = 100;
@@ -84,6 +89,8 @@ class ScreenshotUI {
 
         } );
 
+        this.material = material;
+
         const plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
         const quad: any = new Mesh( plane, material );
         quad.position.z = -100;
@@ -105,6 +112,26 @@ class ScreenshotUI {
         this.animate = this.animate.bind(this);
 
         requestAnimationFrame(this.animate);
+    }
+
+    resize() {
+        const cameraRTT: any = new OrthographicCamera( window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000 );
+        cameraRTT.position.z = 100;
+
+        this.cameraRTT = cameraRTT;
+
+        const sceneRTT: any = new Scene();
+
+        const plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
+        const quad: any = new Mesh( plane, this.material );
+        quad.position.z = -100;
+        sceneRTT.add( quad );
+
+        this.sceneRTT = sceneRTT;
+
+        this.rtTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType } );
+
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
     animate() {
