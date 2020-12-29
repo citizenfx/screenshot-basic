@@ -7,7 +7,7 @@ My [mugshot](https://github.com/jonassvensson4/mugshot/blob/master/client.js#L33
 // Imgur client ID
 const CLIENT_ID = 'changeThis';
 
-exports['screenshot-basic'].requestScreenshotUpload(`https://api.imgur.com/3/upload`, 'imgur', {
+exports['screenshot-basic'].requestScreenshotUpload(`https://api.imgur.com/3/image`, 'imgur', {
    headers: {
       'authorization': `Client-ID ${ CLIENT_ID }`,
       'content-type': 'multipart/form-data'
@@ -21,7 +21,7 @@ exports['screenshot-basic'].requestScreenshotUpload(`https://api.imgur.com/3/upl
 -- Imgur client ID
 local CLIENT_ID = 'changeThis'
 
-exports['screenshot-basic']:requestScreenshotUpload('https://api.imgur.com/3/upload', 'imgur', {
+exports['screenshot-basic']:requestScreenshotUpload('https://api.imgur.com/3/image', 'imgur', {
     headers = {
         ['authorization'] = string.format('Client-ID %s', CLIENT_ID),
         ['content-type'] = 'multipart/form-data'
