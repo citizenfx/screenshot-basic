@@ -16,6 +16,7 @@ import {
 class ScreenshotRequest {
     encoding: 'jpg' | 'png' | 'webp';
     quality: number;
+    headers: any;
 
     correlation: string;
 
@@ -32,11 +33,11 @@ function dataURItoBlob(dataURI: string) {
 
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
-  
+
     for (let i = 0; i < byteString.length; i++) {
         ia[i] = byteString.charCodeAt(i);
     }
-  
+
     const blob = new Blob([ab], {type: mimeString});
     return blob;
 }
@@ -198,6 +199,7 @@ class ScreenshotUI {
         fetch(request.targetURL, {
             method: 'POST',
             mode: 'cors',
+            headers: request.headers,
             body: (request.targetField) ? getFormData() : JSON.stringify({
                 data: imageURL,
                 id: request.correlation

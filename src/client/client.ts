@@ -38,7 +38,7 @@ exp('requestScreenshot', (options: any, cb: (result: string) => void) => {
     realOptions.resultURL = null;
     realOptions.targetField = null;
     realOptions.targetURL = `http://${GetCurrentResourceName()}/screenshot_created`;
-    
+
     realOptions.correlation = registerCorrelation(realCb);
 
     SendNuiMessage(JSON.stringify({
@@ -48,6 +48,7 @@ exp('requestScreenshot', (options: any, cb: (result: string) => void) => {
 
 exp('requestScreenshotUpload', (url: string, field: string, options: any, cb: (result: string) => void) => {
     const realOptions = (cb !== undefined) ? options : {
+        headers: {},
         encoding: 'jpg'
     };
 
@@ -56,7 +57,7 @@ exp('requestScreenshotUpload', (url: string, field: string, options: any, cb: (r
     realOptions.targetURL = url;
     realOptions.targetField = field;
     realOptions.resultURL = `http://${GetCurrentResourceName()}/screenshot_created`;
-    
+
     realOptions.correlation = registerCorrelation(realCb);
 
     SendNuiMessage(JSON.stringify({
