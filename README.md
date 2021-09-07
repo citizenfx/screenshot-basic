@@ -89,3 +89,27 @@ exports['screenshot-basic']:requestClientScreenshot(GetPlayers()[1], {
     print('data', data)
 end)
 ```
+
+#### requestClientVideo(player: string | number, options: any, cb: (err: string | boolean, data: string) => void)
+Requests the specified client to record a video.
+
+Arguments:
+* **player**: The target player's player index.
+* **options**: An object containing options.
+  * **fileName**: string? - The file name on the server to save the video to. If not passed, the callback will get a data URI for the video data.
+  * **encoding**: 'webm' | 'mp4' - The target image encoding. Defaults to 'webm'.
+  * **duration**: int? - The duration of the video recording (in ms). Defaults to 1000ms.
+* **cb**: A callback upon result.
+  * **err**: `false`, or an error string.
+  * **data**: The local file name the upload was saved to, or the data URI for the image.
+
+
+Example:
+```lua
+exports['screenshot-basic']:requestClientVideo(GetPlayers()[1], {
+    fileName = 'cache/screenshot.webm'
+}, function(err, data)
+    print('err', err)
+    print('data', data)
+end)
+```

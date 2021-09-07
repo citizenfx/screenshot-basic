@@ -94,3 +94,17 @@ exp('requestClientScreenshot', (player: string | number, options: any, cb: (err:
 
     emitNet('screenshot_basic:requestScreenshot', player, options, `/${GetCurrentResourceName()}/upload/${tkn}`);
 });
+
+exp('requestClientVideo', (player: string | number, options: any, cb: (err: string | boolean, data: string) => void) => {
+    const tkn = v4();
+
+    const fileName = options.fileName;
+    delete options['fileName']; // so the client won't get to know this
+
+    uploads[tkn] = {
+        fileName,
+        cb
+    };
+
+    emitNet('screenshot_basic:requestVideo', player, options, `/${GetCurrentResourceName()}/upload/${tkn}`);
+});

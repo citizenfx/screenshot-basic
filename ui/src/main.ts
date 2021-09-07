@@ -13,8 +13,13 @@ import {
     WebGLRenderer
 } from '@citizenfx/three';
 
+declare var MediaRecorder: any;
+
 class ScreenshotRequest {
-    encoding: 'jpg' | 'png' | 'webp';
+    isVideo: boolean;
+    duration: number;
+
+    encoding: 'jpg' | 'png' | 'webp' | 'webm' | 'mp4';
     quality: number;
 
     correlation: string;
@@ -41,12 +46,21 @@ function dataURItoBlob(dataURI: string) {
     return blob;
 }
 
+function blobToDataURL(blob, callback) {
+    var a = new FileReader();
+    a.onload = function (e) { callback(a.result); }
+    a.readAsDataURL(blob);
+}
+
+let isAnimated = false;
+
 class ScreenshotUI {
     renderer: any;
     rtTexture: any;
     sceneRTT: any;
     cameraRTT: any;
     material: any;
+    canvas: any;
     request: ScreenshotRequest;
 
     initialize() {
@@ -109,6 +123,11 @@ class ScreenshotUI {
         this.sceneRTT = sceneRTT;
         this.cameraRTT = cameraRTT;
 
+        this.canvas = document.createElement("canvas");
+        this.canvas.style.display = 'inline';
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+
         this.animate = this.animate.bind(this);
 
         requestAnimationFrame(this.animate);
@@ -140,82 +159,135 @@ class ScreenshotUI {
         this.renderer.clear();
         this.renderer.render(this.sceneRTT, this.cameraRTT, this.rtTexture, true);
 
+        const read = new Uint8Array(window.innerWidth * window.innerHeight * 4);
+        this.renderer.readRenderTargetPixels(this.rtTexture, 0, 0, window.innerWidth, window.innerHeight, read);
+
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+
+        const d = new Uint8ClampedArray(read.buffer);
+        const cxt = this.canvas.getContext('2d');
+        const imageData = new ImageData(d, window.innerWidth, window.innerHeight);
+        cxt.putImageData(imageData, 0, 0);
+
         if (this.request) {
             const request = this.request;
             this.request = null;
 
             this.handleRequest(request);
         }
+
     }
 
     handleRequest(request: ScreenshotRequest) {
-        // read the screenshot
-        const read = new Uint8Array(window.innerWidth * window.innerHeight * 4);
-        this.renderer.readRenderTargetPixels(this.rtTexture, 0, 0, window.innerWidth, window.innerHeight, read);
-
-        // create a temporary canvas to compress the image
-        const canvas = document.createElement('canvas');
-        canvas.style.display = 'inline';
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        // draw the image on the canvas
-        const d = new Uint8ClampedArray(read.buffer);
-
-        const cxt = canvas.getContext('2d');
-        cxt.putImageData(new ImageData(d, window.innerWidth, window.innerHeight), 0, 0);
-
-        // encode the image
-        let type = 'image/png';
-
-        switch (request.encoding) {
-            case 'jpg':
-                type = 'image/jpeg';
-                break;
-            case 'png':
-                type = 'image/png';
-                break;
-            case 'webp':
-                type = 'image/webp';
-                break;
-        }
 
         if (!request.quality) {
             request.quality = 0.92;
         }
 
-        // actual encoding
-        const imageURL = canvas.toDataURL(type, request.quality);
+        if (request.isVideo) {
+            // encode the image
+            let type = 'video/webm';
 
-        const getFormData = () => {
-            const formData = new FormData();
-            formData.append(request.targetField, dataURItoBlob(imageURL), `screenshot.${request.encoding}`);
+            let recordedBlobs = [];
+            const stream = this.canvas.captureStream();
 
-            return formData;
-        };
+            let options = { mimeType: type };
+            let mediaRecorder = new MediaRecorder(stream, options);
 
-        // upload the image somewhere
-        fetch(request.targetURL, {
-            method: 'POST',
-            mode: 'cors',
-            body: (request.targetField) ? getFormData() : JSON.stringify({
-                data: imageURL,
-                id: request.correlation
-            })
-        })
-        .then(response => response.text())
-        .then(text => {
-            if (request.resultURL) {
-                fetch(request.resultURL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        data: text,
-                        id: request.correlation
-                    })
+            mediaRecorder.ondataavailable = function (event) {
+                if (event.data && event.data.size > 0) {
+                    recordedBlobs.push(event.data);
+                }
+            };
+
+            mediaRecorder.start(100);
+
+            setTimeout(function () {
+                mediaRecorder.stop();
+                let blob = new Blob(recordedBlobs, { type: type });
+                blobToDataURL(blob, function (dataurl) {
+
+                    const getFormData = () => {
+                        const formData = new FormData();
+                        formData.append(request.targetField, blob, `screenshot.${request.encoding}`);
+
+                        return formData;
+                    };
+
+                    fetch(request.targetURL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        body: (request.targetField) ? getFormData() : JSON.stringify({
+                            data: dataurl,
+                            id: request.correlation
+                        })
+                    }).then(response => response.text()).then(text => {
+                        if (request.resultURL) {
+                            fetch(request.resultURL, {
+                                method: 'POST',
+                                mode: 'cors',
+                                body: JSON.stringify({
+                                    data: text,
+                                    id: request.correlation
+                                })
+                            });
+                        }
+                    });
+
                 });
+
+            }, request.duration)
+        } else {
+            // encode the image
+            let type = 'image/png';
+
+            switch (request.encoding) {
+                case 'jpg':
+                    type = 'image/jpeg';
+                    break;
+                case 'png':
+                    type = 'image/png';
+                    break;
+                case 'webp':
+                    type = 'image/webp';
+                    break;
             }
-        });
+
+            // actual encoding
+            const canvasData = this.canvas.toDataURL(type, request.quality);
+
+            const getFormData = () => {
+                const formData = new FormData();
+                formData.append(request.targetField, dataURItoBlob(canvasData), `screenshot.${request.encoding}`);
+
+                return formData;
+            };
+
+            // upload the image somewhere
+            fetch(request.targetURL, {
+                method: 'POST',
+                mode: 'cors',
+                body: (request.targetField) ? getFormData() : JSON.stringify({
+                    data: canvasData,
+                    id: request.correlation
+                })
+            })
+                .then(response => response.text())
+                .then(text => {
+                    if (request.resultURL) {
+                        fetch(request.resultURL, {
+                            method: 'POST',
+                            mode: 'cors',
+                            body: JSON.stringify({
+                                data: text,
+                                id: request.correlation
+                            })
+                        });
+                    }
+                });
+
+        }
     }
 }
 
