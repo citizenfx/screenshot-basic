@@ -21,6 +21,7 @@ class ScreenshotRequest {
 
     encoding: 'jpg' | 'png' | 'webp' | 'webm' | 'mp4';
     quality: number;
+    headers: any;
 
     correlation: string;
 
@@ -37,12 +38,12 @@ function dataURItoBlob(dataURI: string) {
 
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
-  
+
     for (let i = 0; i < byteString.length; i++) {
         ia[i] = byteString.charCodeAt(i);
     }
-  
-    const blob = new Blob([ab], {type: mimeString});
+
+    const blob = new Blob([ab], { type: mimeString });
     return blob;
 }
 
@@ -51,8 +52,6 @@ function blobToDataURL(blob, callback) {
     a.onload = function (e) { callback(a.result); }
     a.readAsDataURL(blob);
 }
-
-let isAnimated = false;
 
 class ScreenshotUI {
     renderer: any;
@@ -72,16 +71,16 @@ class ScreenshotUI {
             this.resize();
         });
 
-        const cameraRTT: any = new OrthographicCamera( window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000 );
+        const cameraRTT: any = new OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000);
         cameraRTT.position.z = 100;
 
         const sceneRTT: any = new Scene();
 
-        const rtTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType } );
-        const gameTexture: any = new CfxTexture( );
+        const rtTexture = new WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType });
+        const gameTexture: any = new CfxTexture();
         gameTexture.needsUpdate = true;
 
-        const material = new ShaderMaterial( {
+        const material = new ShaderMaterial({
 
             uniforms: { "tDiffuse": { value: gameTexture } },
             vertexShader: `
@@ -101,18 +100,18 @@ class ScreenshotUI {
 			}
 `
 
-        } );
+        });
 
         this.material = material;
 
-        const plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        const quad: any = new Mesh( plane, material );
+        const plane = new PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+        const quad: any = new Mesh(plane, material);
         quad.position.z = -100;
-        sceneRTT.add( quad );
+        sceneRTT.add(quad);
 
         const renderer = new WebGLRenderer();
-        renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.autoClear = false;
 
         document.getElementById('app').appendChild(renderer.domElement);
@@ -134,23 +133,23 @@ class ScreenshotUI {
     }
 
     resize() {
-        const cameraRTT: any = new OrthographicCamera( window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000 );
+        const cameraRTT: any = new OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000);
         cameraRTT.position.z = 100;
 
         this.cameraRTT = cameraRTT;
 
         const sceneRTT: any = new Scene();
 
-        const plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        const quad: any = new Mesh( plane, this.material );
+        const plane = new PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+        const quad: any = new Mesh(plane, this.material);
         quad.position.z = -100;
-        sceneRTT.add( quad );
+        sceneRTT.add(quad);
 
         this.sceneRTT = sceneRTT;
 
-        this.rtTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType } );
+        this.rtTexture = new WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType });
 
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     animate() {
@@ -268,6 +267,7 @@ class ScreenshotUI {
             fetch(request.targetURL, {
                 method: 'POST',
                 mode: 'cors',
+                headers: request.headers,
                 body: (request.targetField) ? getFormData() : JSON.stringify({
                     data: canvasData,
                     id: request.correlation
@@ -290,6 +290,3 @@ class ScreenshotUI {
         }
     }
 }
-
-const ui = new ScreenshotUI();
-ui.initialize();
