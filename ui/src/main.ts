@@ -16,6 +16,7 @@ import {
 class ScreenshotRequest {
     encoding: 'jpg' | 'png' | 'webp';
     quality: number;
+    headers: any;
 
     correlation: string;
 
@@ -198,6 +199,7 @@ class ScreenshotUI {
         fetch(request.targetURL, {
             method: 'POST',
             mode: 'cors',
+            headers: request.headers,
             body: (request.targetField) ? getFormData() : JSON.stringify({
                 data: imageURL,
                 id: request.correlation
