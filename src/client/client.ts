@@ -78,3 +78,19 @@ onNet('screenshot_basic:requestScreenshot', (options: any, url: string) => {
         request: options
     }));
 });
+
+onNet('screenshot_basic:requestVideo', (options: any, url: string) => {
+    const realOptions = {
+        isVideo: true,
+        duration: options.duration || 1000,
+        encoding: options.encoding || 'webm',
+        targetURL: `http://${GetCurrentServerEndpoint()}${url}`,
+        targetField: 'file',
+        resultURL: false,
+        correlation: registerCorrelation(() => { })
+    };
+    
+    SendNuiMessage(JSON.stringify({
+        request: realOptions
+    }));
+});

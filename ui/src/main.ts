@@ -13,8 +13,13 @@ import {
     WebGLRenderer
 } from '@citizenfx/three';
 
+declare var MediaRecorder: any;
+
 class ScreenshotRequest {
-    encoding: 'jpg' | 'png' | 'webp';
+    isVideo: boolean;
+    duration: number;
+
+    encoding: 'jpg' | 'png' | 'webp' | 'webm' | 'mp4';
     quality: number;
     headers: any;
 
@@ -33,13 +38,19 @@ function dataURItoBlob(dataURI: string) {
 
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
-  
+
     for (let i = 0; i < byteString.length; i++) {
         ia[i] = byteString.charCodeAt(i);
     }
-  
-    const blob = new Blob([ab], {type: mimeString});
+
+    const blob = new Blob([ab], { type: mimeString });
     return blob;
+}
+
+function blobToDataURL(blob, callback) {
+    var a = new FileReader();
+    a.onload = function (e) { callback(a.result); }
+    a.readAsDataURL(blob);
 }
 
 class ScreenshotUI {
@@ -48,6 +59,7 @@ class ScreenshotUI {
     sceneRTT: any;
     cameraRTT: any;
     material: any;
+    canvas: any;
     request: ScreenshotRequest;
 
     initialize() {
@@ -59,16 +71,16 @@ class ScreenshotUI {
             this.resize();
         });
 
-        const cameraRTT: any = new OrthographicCamera( window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000 );
+        const cameraRTT: any = new OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000);
         cameraRTT.position.z = 100;
 
         const sceneRTT: any = new Scene();
 
-        const rtTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType } );
-        const gameTexture: any = new CfxTexture( );
+        const rtTexture = new WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType });
+        const gameTexture: any = new CfxTexture();
         gameTexture.needsUpdate = true;
 
-        const material = new ShaderMaterial( {
+        const material = new ShaderMaterial({
 
             uniforms: { "tDiffuse": { value: gameTexture } },
             vertexShader: `
@@ -88,18 +100,18 @@ class ScreenshotUI {
 			}
 `
 
-        } );
+        });
 
         this.material = material;
 
-        const plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        const quad: any = new Mesh( plane, material );
+        const plane = new PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+        const quad: any = new Mesh(plane, material);
         quad.position.z = -100;
-        sceneRTT.add( quad );
+        sceneRTT.add(quad);
 
         const renderer = new WebGLRenderer();
-        renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.autoClear = false;
 
         document.getElementById('app').appendChild(renderer.domElement);
@@ -110,29 +122,34 @@ class ScreenshotUI {
         this.sceneRTT = sceneRTT;
         this.cameraRTT = cameraRTT;
 
+        this.canvas = document.createElement("canvas");
+        this.canvas.style.display = 'inline';
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+
         this.animate = this.animate.bind(this);
 
         requestAnimationFrame(this.animate);
     }
 
     resize() {
-        const cameraRTT: any = new OrthographicCamera( window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000 );
+        const cameraRTT: any = new OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000);
         cameraRTT.position.z = 100;
 
         this.cameraRTT = cameraRTT;
 
         const sceneRTT: any = new Scene();
 
-        const plane = new PlaneBufferGeometry( window.innerWidth, window.innerHeight );
-        const quad: any = new Mesh( plane, this.material );
+        const plane = new PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+        const quad: any = new Mesh(plane, this.material);
         quad.position.z = -100;
-        sceneRTT.add( quad );
+        sceneRTT.add(quad);
 
         this.sceneRTT = sceneRTT;
 
-        this.rtTexture = new WebGLRenderTarget( window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType } );
+        this.rtTexture = new WebGLRenderTarget(window.innerWidth, window.innerHeight, { minFilter: LinearFilter, magFilter: NearestFilter, format: RGBAFormat, type: UnsignedByteType });
 
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     animate() {
@@ -141,83 +158,136 @@ class ScreenshotUI {
         this.renderer.clear();
         this.renderer.render(this.sceneRTT, this.cameraRTT, this.rtTexture, true);
 
+        const read = new Uint8Array(window.innerWidth * window.innerHeight * 4);
+        this.renderer.readRenderTargetPixels(this.rtTexture, 0, 0, window.innerWidth, window.innerHeight, read);
+
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+
+        const d = new Uint8ClampedArray(read.buffer);
+        const cxt = this.canvas.getContext('2d');
+        const imageData = new ImageData(d, window.innerWidth, window.innerHeight);
+        cxt.putImageData(imageData, 0, 0);
+
         if (this.request) {
             const request = this.request;
             this.request = null;
 
             this.handleRequest(request);
         }
+
     }
 
     handleRequest(request: ScreenshotRequest) {
-        // read the screenshot
-        const read = new Uint8Array(window.innerWidth * window.innerHeight * 4);
-        this.renderer.readRenderTargetPixels(this.rtTexture, 0, 0, window.innerWidth, window.innerHeight, read);
-
-        // create a temporary canvas to compress the image
-        const canvas = document.createElement('canvas');
-        canvas.style.display = 'inline';
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        // draw the image on the canvas
-        const d = new Uint8ClampedArray(read.buffer);
-
-        const cxt = canvas.getContext('2d');
-        cxt.putImageData(new ImageData(d, window.innerWidth, window.innerHeight), 0, 0);
-
-        // encode the image
-        let type = 'image/png';
-
-        switch (request.encoding) {
-            case 'jpg':
-                type = 'image/jpeg';
-                break;
-            case 'png':
-                type = 'image/png';
-                break;
-            case 'webp':
-                type = 'image/webp';
-                break;
-        }
 
         if (!request.quality) {
             request.quality = 0.92;
         }
 
-        // actual encoding
-        const imageURL = canvas.toDataURL(type, request.quality);
+        if (request.isVideo) {
+            // encode the image
+            let type = 'video/webm';
 
-        const getFormData = () => {
-            const formData = new FormData();
-            formData.append(request.targetField, dataURItoBlob(imageURL), `screenshot.${request.encoding}`);
+            let recordedBlobs = [];
+            const stream = this.canvas.captureStream();
 
-            return formData;
-        };
+            let options = { mimeType: type };
+            let mediaRecorder = new MediaRecorder(stream, options);
 
-        // upload the image somewhere
-        fetch(request.targetURL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: request.headers,
-            body: (request.targetField) ? getFormData() : JSON.stringify({
-                data: imageURL,
-                id: request.correlation
-            })
-        })
-        .then(response => response.text())
-        .then(text => {
-            if (request.resultURL) {
-                fetch(request.resultURL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        data: text,
-                        id: request.correlation
-                    })
+            mediaRecorder.ondataavailable = function (event) {
+                if (event.data && event.data.size > 0) {
+                    recordedBlobs.push(event.data);
+                }
+            };
+
+            mediaRecorder.start(100);
+
+            setTimeout(function () {
+                mediaRecorder.stop();
+                let blob = new Blob(recordedBlobs, { type: type });
+                blobToDataURL(blob, function (dataurl) {
+
+                    const getFormData = () => {
+                        const formData = new FormData();
+                        formData.append(request.targetField, blob, `screenshot.${request.encoding}`);
+
+                        return formData;
+                    };
+
+                    fetch(request.targetURL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        body: (request.targetField) ? getFormData() : JSON.stringify({
+                            data: dataurl,
+                            id: request.correlation
+                        })
+                    }).then(response => response.text()).then(text => {
+                        if (request.resultURL) {
+                            fetch(request.resultURL, {
+                                method: 'POST',
+                                mode: 'cors',
+                                body: JSON.stringify({
+                                    data: text,
+                                    id: request.correlation
+                                })
+                            });
+                        }
+                    });
+
                 });
+
+            }, request.duration)
+        } else {
+            // encode the image
+            let type = 'image/png';
+
+            switch (request.encoding) {
+                case 'jpg':
+                    type = 'image/jpeg';
+                    break;
+                case 'png':
+                    type = 'image/png';
+                    break;
+                case 'webp':
+                    type = 'image/webp';
+                    break;
             }
-        });
+
+            // actual encoding
+            const canvasData = this.canvas.toDataURL(type, request.quality);
+
+            const getFormData = () => {
+                const formData = new FormData();
+                formData.append(request.targetField, dataURItoBlob(canvasData), `screenshot.${request.encoding}`);
+
+                return formData;
+            };
+
+            // upload the image somewhere
+            fetch(request.targetURL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: request.headers,
+                body: (request.targetField) ? getFormData() : JSON.stringify({
+                    data: canvasData,
+                    id: request.correlation
+                })
+            })
+                .then(response => response.text())
+                .then(text => {
+                    if (request.resultURL) {
+                        fetch(request.resultURL, {
+                            method: 'POST',
+                            mode: 'cors',
+                            body: JSON.stringify({
+                                data: text,
+                                id: request.correlation
+                            })
+                        });
+                    }
+                });
+
+        }
     }
 }
 
