@@ -73,8 +73,16 @@ onNet('screenshot_basic:requestScreenshot', (options: any, url: string) => {
     options.resultURL = null;
 
     options.correlation = registerCorrelation(() => {});
+    
+    const realOptions = {
+        encoding: options.encoding,
+        targetURL: options.targetURL,
+        targetField: options.targetField,
+        resultURL: options.resultURL,
+        correlation: options.correlation,
+    };
 
     SendNuiMessage(JSON.stringify({
-        request: options
+        request: realOptions
     }));
 });
