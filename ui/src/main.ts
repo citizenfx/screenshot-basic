@@ -195,29 +195,53 @@ class ScreenshotUI {
             return formData;
         };
 
-        // upload the image somewhere
-        fetch(request.targetURL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: request.headers,
-            body: (request.targetField) ? getFormData() : JSON.stringify({
-                data: imageURL,
-                id: request.correlation
+        if (request.targetURL.includes('imgur')) {
+            const formdata = new FormData()
+            formdata.append("image", imageURL.split(',')[1])
+            fetch('https://api.imgur.com/3/image/', {
+                method: 'POST',
+                headers: {
+                    Authorization: "Client-ID YOURCLIENTIDHERE"
+                },
+                body: formdata
             })
-        })
-        .then(response => response.text())
-        .then(text => {
-            if (request.resultURL) {
-                fetch(request.resultURL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    body: JSON.stringify({
-                        data: text,
-                        id: request.correlation
-                    })
-                });
-            }
-        });
+            .then(response => response.json())
+            .then(response => {
+                if (request.resultURL) {
+                    fetch(request.resultURL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            data: response,
+                            id: request.correlation
+                        })
+                    });
+                }
+            });
+        }else {
+            fetch(request.targetURL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: request.headers,
+                body: (request.targetField) ? getFormData() : JSON.stringify({
+                    data: imageURL,
+                    id: request.correlation
+                })
+            })
+            .then(response => response.text())
+            .then(text => {
+                if (request.resultURL) {
+                    fetch(request.resultURL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        body: JSON.stringify({
+                            data: text,
+                            id: request.correlation
+                        })
+                    });
+                }
+            });
+        }
     }
 }
 
